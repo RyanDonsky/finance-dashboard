@@ -34,8 +34,8 @@ with tab1:
                     "Volatility (%)": round(volatility, 2),
                     "Market Cap ($B)": round(info.get("marketCap", 0) / 1e9, 1)
                 })
-            except:
-                pass
+            except Exception as e:
+                print(e)
             progress.progress((i + 1) / len(tickers))
         
         df = pd.DataFrame(data).sort_values("1Y Return (%)", ascending=False).reset_index(drop=True)
