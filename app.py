@@ -20,6 +20,7 @@ with tab1:
     
     if st.button("Run Screener"):
         max_stocks = st.slider("Max stocks to analyze", 1, 15, 6)
+    if st.button("Run Screener"):
         tickers = [t.strip().upper() for t in tickers_input.split(",")][:max_stocks]
         data = []
         progress = st.progress(0)
