@@ -38,7 +38,13 @@ with tab1:
                 print(e)
             progress.progress((i + 1) / len(tickers))
         
-        df = pd.DataFrame(data).sort_values("1Y Return (%)", ascending=False).reset_index(drop=True)
+        df = pd.DataFrame(data)
+
+        if df.empty or "1Y Return (%)" not in df.columns:
+            st.warning("No valid data found. Try different tickers.")
+            st.stop()
+
+        df = df.sort_values("1Y Return (%)", ascending=False).reset_index(drop=True)    
         st.dataframe(df, use_container_width=True)
         
         fig, ax = plt.subplots(figsize=(10, 5))
