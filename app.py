@@ -35,7 +35,7 @@ with tab1:
                     "Market Cap ($B)": round(info.get("marketCap", 0) / 1e9, 1)
                 })
             except Exception as e:
-                print(e)
+                st.write(f"Error with {stock}: {e}")
             progress.progress((i + 1) / len(tickers))
         
         df = pd.DataFrame(data)
