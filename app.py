@@ -11,42 +11,55 @@ st.markdown("Built by Ryan Donsky")
 
 tab1, tab2, tab3 = st.tabs(["Stock Screener", "Portfolio Tracker", "AI Earnings Analyser"])
 
+# =========================
+# TAB 1 — STOCK SCREENER
+# =========================
 with tab1:
     st.header("Stock Screener")
     tickers_input = st.text_input("Enter tickers separated by commas", "AAPL, MSFT, TSLA, NVDA, GS, JPM")
     
     if st.button("Run Screener"):
-        tickers = [t.strip() for t in tickers_input.split(",")]
+        tickers = [t.strip().upper() for t in tickers_input.split(",")][:6]  # limit to avoid overload
         data = []
         progress = st.progress(0)
-        
-        for i, stock in enumerate(tickers):
-            try:
-                info = yf.Ticker(stock).info
-                history = yf.Ticker(stock).history(period="1y")
-                annual_return = ((history["Close"].iloc[-1] - history["Close"].iloc[0]) / history["Close"].iloc[0]) * 100
-                volatility = history["Close"].pct_change().std() * 100
-                data.append({
-                    "Ticker": stock,
-                    "Price": round(info.get("currentPrice", 0), 2),
-                    "P/E Ratio": round(info.get("trailingPE", 0), 1),
-                    "1Y Return (%)": round(annual_return, 1),
-                    "Volatility (%)": round(volatility, 2),
-                    "Market Cap ($B)": round(info.get("marketCap", 0) / 1e9, 1)
-                })
-            except Exception as e:
-                st.write(f"Error with {stock}: {e}")
-            progress.progress((i + 1) / len(tickers))
-        
+
+        try:
+            df_all = yf.download(tickers, period="1y", group_by="ticker", threads=False)
+
+            for i, stock in enumerate(tickers):
+                try:
+                    hist = df_all[stock] if len(tickers) > 1 else df_all
+
+                    if hist.empty:
+                        continue
+
+                    annual_return = ((hist["Close"].iloc[-1] - hist["Close"].iloc[0]) / hist["Close"].iloc[0]) * 100
+                    volatility = hist["Close"].pct_change().std() * 100
+
+                    data.append({
+                        "Ticker": stock,
+                        "Price": round(hist["Close"].iloc[-1], 2),
+                        "1Y Return (%)": round(annual_return, 1),
+                        "Volatility (%)": round(volatility, 2)
+                    })
+
+                except:
+                    st.warning(f"{stock} skipped")
+
+                progress.progress((i + 1) / len(tickers))
+
+        except Exception as e:
+            st.error("Data fetch failed — try fewer tickers")
+
         df = pd.DataFrame(data)
 
         if df.empty or "1Y Return (%)" not in df.columns:
             st.warning("No valid data found. Try different tickers.")
             st.stop()
 
-        df = df.sort_values("1Y Return (%)", ascending=False).reset_index(drop=True)    
+        df = df.sort_values("1Y Return (%)", ascending=False).reset_index(drop=True)
         st.dataframe(df, use_container_width=True)
-        
+
         fig, ax = plt.subplots(figsize=(10, 5))
         colors = ["#1D9E75" if x > 0 else "#E24B4A" for x in df["1Y Return (%)"]]
         ax.barh(df["Ticker"], df["1Y Return (%)"], color=colors)
@@ -54,6 +67,10 @@ with tab1:
         ax.axvline(x=0, color="black", linewidth=0.5)
         st.pyplot(fig)
 
+
+# =========================
+# TAB 2 — PORTFOLIO TRACKER
+# =========================
 with tab2:
     st.header("Portfolio Tracker")
     st.markdown("Enter your portfolio below — one stock per line in the format `TICKER, SHARES`")
@@ -65,7 +82,7 @@ with tab2:
         for line in portfolio_input.strip().split("\n"):
             parts = line.split(",")
             if len(parts) == 2:
-                portfolio[parts[0].strip()] = int(parts[1].strip())
+                portfolio[parts[0].strip().upper()] = int(parts[1].strip())
         
         data = {}
         for stock in portfolio:
@@ -87,7 +104,14 @@ with tab2:
             pct = round((gain / invested) * 100, 1)
             total_invested += invested
             total_current += current
-            rows.append({"Ticker": stock, "Shares": shares, "Invested ($)": invested, "Current ($)": current, "Gain/Loss ($)": gain, "Return (%)": pct})
+            rows.append({
+                "Ticker": stock,
+                "Shares": shares,
+                "Invested ($)": invested,
+                "Current ($)": current,
+                "Gain/Loss ($)": gain,
+                "Return (%)": pct
+            })
         
         summary_df = pd.DataFrame(rows)
         
@@ -110,6 +134,10 @@ with tab2:
         ax.legend()
         st.pyplot(fig)
 
+
+# =========================
+# TAB 3 — AI ANALYSER
+# =========================
 with tab3:
     st.header("AI Earnings Analyser")
     api_key = st.text_input("Your Anthropic API key", type="password")
