@@ -158,7 +158,15 @@ with tab3:
                     max_tokens=1000,
                     messages=[{
                         "role": "user",
-                        "content": f"""You are a senior equity research analyst. Analyse this earnings call transcript and provide a structured summary covering:
+                        "content": f"""Format your response CLEANLY using markdown.
+
+Use:
+- Clear section headers (##)
+- Bullet points
+- Tables where appropriate
+- Proper spacing between sections
+
+You are a senior equity research analyst. Analyse this earnings call transcript and provide a structured summary covering:
 
 1. KEY FINANCIALS — revenue, margins, any key metrics mentioned
 2. POSITIVES — what went well, beats, strong segments
@@ -170,4 +178,4 @@ Transcript:
 {transcript}"""
                     }]
                 )
-                st.markdown(response.content[0].text)
+                st.markdown(response.content[0].text, unsafe_allow_html=True)
