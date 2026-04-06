@@ -18,8 +18,8 @@ with tab1:
     st.header("Stock Screener")
     tickers_input = st.text_input("Enter tickers separated by commas", "AAPL, MSFT, TSLA, NVDA, GS, JPM")
     
-    if st.button("Run Screener"):
-        max_stocks = st.slider("Max stocks to analyze", 1, 15, 6)
+    max_stocks = st.slider("Max stocks to analyze", 1, 15, 6)
+
     if st.button("Run Screener"):
         tickers = [t.strip().upper() for t in tickers_input.split(",")][:max_stocks]
         data = []
